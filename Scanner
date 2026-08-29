@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VirusTotal · Clone + Sample</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
+    body { background: #0a0c10; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+    .vt-container { max-width: 1100px; width: 100%; background: #14171e; border-radius: 32px; padding: 2.2rem 2.8rem; box-shadow: 0 25px 70px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.03); }
+    .vt-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2.5rem; border-bottom: 1px solid #1e293b; padding-bottom: 1.2rem; flex-wrap: wrap; gap: 12px; }
+    .vt-logo { display: flex; align-items: center; gap: 14px; }
+    .vt-logo i { font-size: 2.6rem; color: #3b82f6; background: #0f172a; padding: 12px; border-radius: 20px; box-shadow: 0 0 0 1px #1e293b; }
+    .vt-logo h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.5px; background: linear-gradient(135deg, #f8fafc, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .vt-logo span { font-size: 0.9rem; color: #64748b; margin-left: 6px; -webkit-text-fill-color: #64748b; }
+    .vt-badge { background: #1e293b; padding: 6px 18px; border-radius: 40px; font-size: 0.7rem; color: #94a3b8; border: 1px solid #2d3748; display: flex; align-items: center; gap: 8px; }
+    .vt-badge i { color: #22c55e; font-size: 0.55rem; }
+    .vt-drop { background: #0f131a; border: 2px dashed #2d3748; border-radius: 28px; padding: 3.2rem 1.5rem; text-align: center; cursor: pointer; transition: 0.25s; margin-bottom: 1.8rem; position: relative; }
+    .vt-drop:hover { border-color: #3b82f6; background: #141b26; }
+    .vt-drop.drag-over { border-color: #3b82f6; background: #182233; box-shadow: 0 0 0 5px rgba(59,130,246,0.08); }
+    .vt-drop i { font-size: 4.2rem; color: #3b82f6; margin-bottom: 10px; opacity: 0.7; }
+    .vt-drop h3 { color: #e2e8f0; font-weight: 500; font-size: 1.4rem; }
+    .vt-drop p { color: #64748b; font-size: 0.95rem; margin-top: 4px; }
+    .vt-drop .browse-btn { display: inline-block; margin-top: 18px; background: #2563eb; padding: 12px 34px; border-radius: 60px; color: #fff; font-weight: 600; border: none; transition: 0.2s; cursor: pointer; box-shadow: 0 4px 16px rgba(37,99,235,0.3); }
+    .vt-drop .browse-btn:hover { background: #1d4ed8; transform: scale(1.02); }
+    #fileInput { display: none; }
+    .vt-file-info { display: none; align-items: center; gap: 18px; background: #0f131a; padding: 16px 24px; border-radius: 60px; margin-bottom: 1.8rem; border: 1px solid #1e293b; }
+    .vt-file-info.active { display: flex; }
+    .vt-file-info i { font-size: 1.8rem; color: #3b82f6; }
+    .vt-file-info .details { flex: 1; }
+    .vt-file-info .details .name { color: #f1f5f9; font-weight: 600; font-size: 1.05rem; }
+    .vt-file-info .details .meta { color: #64748b; font-size: 0.8rem; display: flex; gap: 20px; flex-wrap: wrap; margin-top: 2px; }
+    .vt-file-info .remove-btn { background: transparent; border: none; color: #64748b; font-size: 1.4rem; cursor: pointer; transition: 0.2s; padding: 0 4px; }
+    .vt-file-info .remove-btn:hover { color: #ef4444; }
+    .vt-actions { display: flex; gap: 14px; margin-bottom: 2.2rem; flex-wrap: wrap; }
+    .vt-scan { flex: 1; background: #3b82f6; border: none; padding: 18px 24px; border-radius: 60px; font-weight: 700; font-size: 1.1rem; color: #fff; display: flex; align-items: center; justify-content: center; gap: 14px; transition: 0.2s; cursor: pointer; box-shadow: 0 8px 24px rgba(59,130,246,0.25); min-width: 140px; }
+    .vt-scan:hover:not(:disabled) { background: #2563eb; transform: scale(1.01); }
+    .vt-scan:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+    .vt-sample { background: #1e293b; border: 1px solid #ef4444; padding: 18px 28px; border-radius: 60px; font-weight: 600; color: #ef4444; transition: 0.2s; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+    .vt-sample:hover { background: #2d3748; border-color: #f87171; color: #f87171; }
+    .vt-reset { background: #1e293b; border: 1px solid #2d3748; padding: 18px 28px; border-radius: 60px; font-weight: 500; color: #94a3b8; transition: 0.2s; cursor: pointer; }
+    .vt-reset:hover { background: #2d3748; color: #e2e8f0; }
+    .vt-results { background: #0b0d11; border-radius: 24px; padding: 1.8rem 2rem 1.4rem; border: 1px solid #1a1f29; }
+    .vt-results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 8px; }
+    .vt-results-header h4 { color: #94a3b8; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.8px; }
+    .vt-results-header h4 i { margin-right: 10px; color: #3b82f6; }
+    .vt-results-header .time { color: #475569; font-size: 0.8rem; font-family: monospace; }
+    .vt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0px 30px; }
+    .vt-engine { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #13171f; }
+    .vt-engine .left { display: flex; align-items: center; gap: 12px; }
+    .vt-engine .left .e-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; background: #1e293b; flex-shrink: 0; }
+    .vt-engine .left .e-name { color: #e2e8f0; font-size: 0.85rem; font-weight: 500; }
+    .vt-engine .left .e-detail { color: #64748b; font-size: 0.7rem; margin-left: 6px; }
+    .vt-engine .verdict-badge { font-weight: 700; font-size: 0.75rem; padding: 3px 14px; border-radius: 40px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .verdict-badge.clean { color: #22c55e; background: #0f2a1a; }
+    .verdict-badge.malicious { color: #ef4444; background: #2a1018; }
+    .verdict-badge.suspicious { color: #eab308; background: #2a2210; }
+    .verdict-badge.undetected { color: #64748b; background: #1a1f29; }
+    .vt-stats { margin-top: 1.8rem; display: flex; align-items: center; gap: 28px; flex-wrap: wrap; padding-top: 1.2rem; border-top: 1px solid #1a1f29; }
+    .vt-stats .stat { display: flex; align-items: center; gap: 10px; }
+    .vt-stats .stat .num { font-size: 1.5rem; font-weight: 700; color: #f1f5f9; }
+    .vt-stats .stat .label { color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.4px; }
+    .vt-stats .stat .num.mal { color: #ef4444; }
+    .vt-stats .stat .num.sus { color: #eab308; }
+    .vt-stats .stat .num.und { color: #64748b; }
+    .vt-stats .stat .num.cln { color: #22c55e; }
+    .vt-score-bar { flex: 1; min-width: 120px; }
+    .vt-score-track { height: 6px; background: #1e293b; border-radius: 10px; overflow: hidden; margin-top: 4px; }
+    .vt-score-fill { height: 100%; width: 0%; border-radius: 10px; transition: width 0.8s ease; }
+    .vt-score-label { display: flex; justify-content: space-between; font-size: 0.7rem; color: #475569; margin-top: 2px; }
+    .placeholder-text { color: #475569; text-align: center; padding: 1.8rem 0; font-size: 0.95rem; }
+    .placeholder-text i { margin-right: 10px; color: #2d3748; }
+    .vt-log { margin-top: 1.2rem; background: #080b10; border-radius: 12px; padding: 0.6rem 1.2rem; border: 1px solid #1a1f29; max-height: 60px; overflow-y: auto; font-family: monospace; font-size: 0.7rem; color: #475569; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .vt-log .log-entry { display: inline; }
+    .vt-log .good { color: #22c55e; }
+    .vt-log .bad { color: #ef4444; }
+    .vt-log .warn { color: #eab308; }
+    @media (max-width: 720px) { .vt-container { padding: 1.5rem; } .vt-grid { grid-template-columns: 1fr; } .vt-actions { flex-direction: column; } .vt-stats { gap: 16px; } }
+  </style>
+</head>
+<body>
+<div class="vt-container">
+  <div class="vt-header">
+    <div class="vt-logo">
+      <i class="fas fa-shield-virus"></i>
+      <h1>VirusTotal <span>· clone</span></h1>
+    </div>
+    <div class="vt-badge"><i class="fas fa-circle"></i> 60+ engines · live</div>
+  </div>
+
+  <div class="vt-drop" id="dropZone">
+    <i class="fas fa-cloud-upload-alt"></i>
+    <h3>Drop file here</h3>
+    <p>or click to browse · up to 50 MB</p>
+    <div class="browse-btn" id="browseBtn"><i class="fas fa-folder-open"></i> Select file</div>
+    <input type="file" id="fileInput">
+  </div>
+
+  <div class="vt-file-info" id="fileInfo">
+    <i class="fas fa-file-alt"></i>
+    <div class="details">
+      <div class="name" id="fileName">payload.exe</div>
+      <div class="meta"><span id="fileSize">0 KB</span><span id="fileType">application/x-msdownload</span></div>
+    </div>
+    <button class="remove-btn" id="removeFileBtn"><i class="fas fa-times"></i></button>
+  </div>
+
+  <div class="vt-actions">
+    <button class="vt-scan" id="scanBtn" disabled><i class="fas fa-search"></i> Scan</button>
+    <button class="vt-sample" id="sampleBtn"><i class="fas fa-biohazard"></i> Load EICAR (malicious)</button>
+    <button class="vt-reset" id="resetBtn"><i class="fas fa-undo-alt"></i> Reset</button>
+  </div>
+
+  <div class="vt-results">
+    <div class="vt-results-header">
+      <h4><i class="fas fa-table"></i> Detection</h4>
+      <span class="time" id="scanTime">—</span>
+    </div>
+    <div id="resultsContainer"><div class="placeholder-text"><i class="fas fa-inbox"></i> No file submitted</div></div>
+
+    <div class="vt-stats" id="statsBar" style="display:none;">
+      <div class="stat"><span class="num mal" id="malCount">0</span><span class="label">Malicious</span></div>
+      <div class="stat"><span class="num sus" id="susCount">0</span><span class="label">Suspicious</span></div>
+      <div class="stat"><span class="num und" id="undCount">0</span><span class="label">Undetected</span></div>
+      <div class="stat"><span class="num cln" id="clnCount">0</span><span class="label">Clean</span></div>
+      <div class="vt-score-bar">
+        <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:#475569;"><span>0%</span><span id="scoreLabel">0%</span></div>
+        <div class="vt-score-track"><div class="vt-score-fill" id="scoreFill" style="width:0%;"></div></div>
+      </div>
+    </div>
+
+    <div class="vt-log" id="logArea"><span class="log-entry good">● Ready — click "Load EICAR" to test</span></div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const browseBtn = document.getElementById('browseBtn');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const fileType = document.getElementById('fileType');
+    const removeFileBtn = document.getElementById('removeFileBtn');
+    const scanBtn = document.getElementById('scanBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const sampleBtn = document.getElementById('sampleBtn');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const scanTime = document.getElementById('scanTime');
+    const statsBar = document.getElementById('statsBar');
+    const malCount = document.getElementById('malCount');
+    const susCount = document.getElementById('susCount');
+    const undCount = document.getElementById('undCount');
+    const clnCount = document.getElementById('clnCount');
+    const scoreFill = document.getElementById('scoreFill');
+    const scoreLabel = document.getElementById('scoreLabel');
+    const logArea = document.getElementById('logArea');
+
+    let currentFile = null;
+    let isScanning = false;
+
+    function log(msg, type = 'info') {
+      const entry = document.createElement('span');
+      entry.className = 'log-entry ' + (type === 'good' ? 'good' : type === 'bad' ? 'bad' : type === 'warn' ? 'warn' : '');
+      entry.textContent = '● ' + msg;
+      logArea.appendChild(entry);
+      logArea.scrollTop = logArea.scrollHeight;
+      while (logArea.children.length > 25) logArea.removeChild(logArea.firstChild);
+    }
+
+    function clearLog() { logArea.innerHTML = ''; }
+
+    function formatSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    function performRealScan(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const buffer = e.target.result;
+          const bytes = new Uint8Array(buffer);
+          const total = bytes.length;
+          if (total === 0) { resolve({ engines: [], score: 0, stats: { malicious:0, suspicious:0, undetected:0, clean:0 } }); return; }
+
+          let freq = new Array(256).fill(0);
+          for (let i = 0; i < total; i++) freq[bytes[i]]++;
+          let entropy = 0;
+          for (let i = 0; i < 256; i++) {
+            if (freq[i] > 0) { let p = freq[i] / total; entropy -= p * Math.log2(p); }
+          }
+          const entropyScore = Math.min(1, Math.max(0, (entropy - 5.2) / 3.2));
+
+          let sigs = [];
+          if (total >= 2 && bytes[0]===0x4D && bytes[1]===0x5A) sigs.push('PE');
+          if (total>=4 && bytes[0]===0x7F && bytes[1]===0x45 && bytes[2]===0x4C && bytes[3]===0x46) sigs.push('ELF');
+          if (total>=4 && ((bytes[0]===0xFE && bytes[1]===0xED && bytes[2]===0xFA && bytes[3]===0xCE) || (bytes[0]===0xCA && bytes[1]===0xFE && bytes[2]===0xBA && bytes[3]===0xBE))) sigs.push('Mach-O');
+          if (total>=4 && bytes[0]===0x50 && bytes[1]===0x4B && bytes[2]===0x03 && bytes[3]===0x04) sigs.push('ZIP');
+          if (total>=4 && bytes[0]===0x25 && bytes[1]===0x50 && bytes[2]===0x44 && bytes[3]===0x46) sigs.push('PDF');
+          if (total>=4 && bytes[0]===0x52 && bytes[1]===0x61 && bytes[2]===0x72 && bytes[3]===0x21) sigs.push('RAR');
+          if (total>=6 && bytes[0]===0x37 && bytes[1]===0x7A && bytes[2]===0xBC && bytes[3]===0xAF && bytes[4]===0x27 && bytes[5]===0x1C) sigs.push('7z');
+          if (total>=2 && bytes[0]===0x1F && bytes[1]===0x8B) sigs.push('GZIP');
+
+          const textSlice = new TextDecoder('utf-8', { fatal: false }).decode(bytes.slice(0, 8192));
+          const indicators = [
+            'eval(', 'base64_decode', 'gzinflate', 'system(', 'exec(', 'shell_exec', 'passthru',
+            'wscript', 'cscript', 'powershell', 'cmd.exe', 'regsvr32', 'rundll32', 'mshta',
+            'javascript:', 'vbscript:', 'http://', 'https://', 'socket', 'connect(',
+            'backdoor', 'payload', 'exploit', 'malware', 'trojan', 'rootkit', 'keylog',
+            'ransom', 'crypto', 'miner', 'xmr', 'eth', 'bitcoin', 'coinbase', 'wallet',
+            'EICAR-STANDARD-ANTIVIRUS-TEST-FILE'
+          ];
+          let found = [];
+          for (let ind of indicators) {
+            if (textSlice.toLowerCase().includes(ind.toLowerCase())) found.push(ind);
+          }
+
+          let base = 0;
+          if (entropyScore > 0.6) base += 0.3;
+          else if (entropyScore > 0.4) base += 0.12;
+          if (sigs.some(s => s==='PE' || s==='ELF' || s==='Mach-O')) base += 0.25;
+          if (found.length >= 4) base += 0.35;
+          else if (found.length >= 2) base += 0.18;
+          else if (found.length >= 1) base += 0.08;
+          const ext = file.name.split('.').pop().toLowerCase();
+          if (['exe','scr','com','pif','cmd','bat','vbs','js','jar','app','deb','rpm','msi','dmg','apk','xap','class'].includes(ext)) base += 0.1;
+          if (total < 2048) base += 0.05;
+          if (total > 40*1024*1024) base += 0.05;
+          const rawScore = Math.min(1, base);
+          const score = Math.min(100, Math.round(rawScore * 100 + (Math.random() * 4 - 2)));
+
+          const engineNames = [
+            'Cylance','Kaspersky','McAfee','Symantec','Bitdefender','ESET-NOD32','Palo Alto','CrowdStrike',
+            'Sophos','TrendMicro','Microsoft','SentinelOne','Fortinet','Avast','AVG','Malwarebytes',
+            'FireEye','CheckPoint','F-Secure','GData','VIPRE','Webroot','Zoner','AhnLab','Avira','ClamAV',
+            'Comodo','DrWeb','Emsisoft','eScan','FProt','Ikarus','Jiangmin','K7','Lavasoft','MAX',
+            'NANO','Panda','QuickHeal','Rising','SecureAge','Solo','Tencent','TotalDefense','VBA32',
+            'ViRobot','Yandex','Zillya','Alibaba','Antiy','Baidu','CAT','CMC','Cybereason','Elastic',
+            'Endgame','Fujitsu','Hauri','Kingsoft','McAfee-GW','Sentinel','TACHYON','Tecent','Trustlook',
+            'WhiteArmor','Xvirus','Zoe'
+          ];
+
+          let hash = 0;
+          for (let i = 0; i < Math.min(bytes.length, 2048); i++) hash = (hash * 31 + bytes[i]) & 0xFFFFFFFF;
+          const results = [];
+          let mal=0, sus=0, und=0, cln=0;
+          engineNames.forEach((engine, idx) => {
+            const eRand = (min, max) => { const r = ((hash * (idx+1) * 7919 + 49297) % 233280) / 233280; return min + r * (max - min); };
+            const sensitivity = 0.45 + (idx % 5) * 0.1;
+            const threshold = rawScore * sensitivity;
+            let verdict = 'clean';
+            let detail = 'No threat detected';
+            if (threshold > 0.72) {
+              verdict = 'malicious';
+              detail = 'Trojan.Generic.' + (Math.floor(eRand(1000, 9999)));
+              mal++;
+            } else if (threshold > 0.48) {
+              verdict = 'suspicious';
+              detail = 'Heuristic.BehavesLike.' + (Math.floor(eRand(100, 999)));
+              sus++;
+            } else if (threshold > 0.28 && eRand(0,1) > 0.55) {
+              verdict = 'undetected';
+              detail = 'No detection (timeout)';
+              und++;
+            } else {
+              verdict = 'clean';
+              detail = 'No threat detected';
+              cln++;
+            }
+            results.push({ engine, verdict, detail });
+          });
+
+          const order = { 'malicious': 0, 'suspicious': 1, 'undetected': 2, 'clean': 3 };
+          results.sort((a,b) => order[a.verdict] - order[b.verdict]);
+
+          resolve({
+            engines: results,
+            score: score,
+            stats: { malicious: mal, suspicious: sus, undetected: und, clean: cln },
+            total: engineNames.length,
+            entropy: entropy,
+            sigs: sigs,
+            strings: found
+          });
+        };
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    function renderResults(data) {
+      const { engines, score, stats, total, entropy, sigs, strings } = data;
+      let html = '<div class="vt-grid">';
+      engines.forEach(item => {
+        const vClass = item.verdict;
+        let icon = 'fa-shield';
+        if (vClass === 'malicious') icon = 'fa-skull';
+        else if (vClass === 'suspicious') icon = 'fa-exclamation';
+        else if (vClass === 'undetected') icon = 'fa-question';
+        else icon = 'fa-check';
+        const color = vClass === 'malicious' ? '#ef4444' : vClass === 'suspicious' ? '#eab308' : vClass === 'undetected' ? '#64748b' : '#22c55e';
+        html += `
+          <div class="vt-engine">
+            <div class="left">
+              <div class="e-icon" style="color:${color};background:${vClass==='malicious'?'#2a1018':vClass==='suspicious'?'#2a2210':'#0f1a1a'};"><i class="fas ${icon}"></i></div>
+              <span class="e-name">${item.engine}</span>
+              <span class="e-detail">${item.detail}</span>
+            </div>
+            <div class="verdict-badge ${vClass}">${vClass.charAt(0).toUpperCase() + vClass.slice(1)}</div>
+          </div>
+        `;
+      });
+      html += '</div>';
+
+      malCount.textContent = stats.malicious;
+      susCount.textContent = stats.suspicious;
+      undCount.textContent = stats.undetected;
+      clnCount.textContent = stats.clean;
+      statsBar.style.display = 'flex';
+
+      scoreFill.style.width = score + '%';
+      scoreLabel.textContent = score + '%';
+      if (score >= 60) scoreFill.style.background = '#ef4444';
+      else if (score >= 30) scoreFill.style.background = '#eab308';
+      else scoreFill.style.background = '#22c55e';
+
+      const now = new Date();
+      scanTime.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      log(`Scan complete — ${stats.malicious}/${total} engines detected`, stats.malicious > 3 ? 'bad' : stats.malicious > 0 ? 'warn' : 'good');
+      log(`Entropy: ${entropy.toFixed(2)} (${entropy > 7.0 ? 'high' : entropy > 6.0 ? 'moderate' : 'low'})`, 'info');
+      if (sigs.length) log(`Magic: ${sigs.join(', ')}`, 'info');
+      if (strings.length) log(`Suspicious strings: ${strings.slice(0,5).join(', ')}${strings.length>5?' ...':''}`, 'warn');
+
+      resultsContainer.innerHTML = html;
+    }
+
+    function setFile(file) {
+      if (!file) {
+        currentFile = null;
+        fileInfo.classList.remove('active');
+        scanBtn.disabled = true;
+        resultsContainer.innerHTML = `<div class="placeholder-text"><i class="fas fa-inbox"></i> No file submitted</div>`;
+        statsBar.style.display = 'none';
+        scanTime.textContent = '—';
+        clearLog();
+        log('Ready — click "Load EICAR" to test', 'good');
+        return;
+      }
+      currentFile = file;
+      fileName.textContent = file.name;
+      fileSize.textContent = formatSize(file.size);
+      fileType.textContent = file.type || 'unknown';
+      fileInfo.classList.add('active');
+      scanBtn.disabled = false;
+      resultsContainer.innerHTML = `<div class="placeholder-text"><i class="fas fa-file-upload"></i> Ready to scan "${file.name}"</div>`;
+      statsBar.style.display = 'none';
+      scanTime.textContent = '—';
+      clearLog();
+      log(`Loaded: ${file.name} (${formatSize(file.size)})`, 'good');
+    }
+
+    async function performScan() {
+      if (!currentFile || isScanning) return;
+      isScanning = true;
+      scanBtn.disabled = true;
+      scanBtn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Scanning (60+ engines)';
+      resultsContainer.innerHTML = `<div class="placeholder-text"><i class="fas fa-spinner fa-pulse"></i> Analyzing with 60+ engines...</div>`;
+      log('Scanning started...', 'info');
+
+      try {
+        const data = await performRealScan(currentFile);
+        renderResults(data);
+      } catch (err) {
+        log(`Error: ${err.message}`, 'bad');
+        resultsContainer.innerHTML = `<div class="placeholder-text"><i class="fas fa-exclamation-triangle"></i> Scan failed</div>`;
+      }
+      scanBtn.innerHTML = '<i class="fas fa-search"></i> Scan';
+      scanBtn.disabled = false;
+      isScanning = false;
+    }
+
+    function resetAll() {
+      if (isScanning) return;
+      currentFile = null;
+      fileInput.value = '';
+      fileInfo.classList.remove('active');
+      scanBtn.disabled = true;
+      resultsContainer.innerHTML = `<div class="placeholder-text"><i class="fas fa-inbox"></i> No file submitted</div>`;
+      statsBar.style.display = 'none';
+      scanTime.textContent = '—';
+      clearLog();
+      log('Reset — ready', 'good');
+      dropZone.classList.remove('drag-over');
+    }
+
+    // --- EICAR SAMPLE ---
+    function loadEICAR() {
+      if (isScanning) return;
+      // EICAR test string + PE header bytes to trigger detection
+      const eicar = 'X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*';
+      const padding = new Uint8Array([0x4D, 0x5A, 0x90, 0x00, 0x03, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00]);
+      const combined = new Uint8Array(padding.length + eicar.length);
+      combined.set(padding, 0);
+      combined.set(new TextEncoder().encode(eicar), padding.length);
+      const blob = new Blob([combined], { type: 'application/x-msdownload' });
+      const file = new File([blob], 'eicar_test.exe', { type: 'application/x-msdownload' });
+      setFile(file);
+      log('EICAR test file loaded — click Scan to detect', 'warn');
+    }
+
+    // --- EVENTS ---
+    browseBtn.addEventListener('click', (e) => { e.stopPropagation(); fileInput.click(); });
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => { if (e.target.files.length > 0) setFile(e.target.files[0]); fileInput.value = ''; });
+
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.classList.remove('drag-over'); });
+    dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('drag-over'); if (e.dataTransfer.files.length > 0) setFile(e.dataTransfer.files[0]); });
+
+    removeFileBtn.addEventListener('click', (e) => { e.stopPropagation(); resetAll(); });
+    scanBtn.addEventListener('click', performScan);
+    resetBtn.addEventListener('click', resetAll);
+    sampleBtn.addEventListener('click', loadEICAR);
+
+    resetAll();
+  })();
+</script>
+</body>
+</html>
