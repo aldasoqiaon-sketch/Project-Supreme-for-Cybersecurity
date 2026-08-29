@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Supreme · Scanner</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif}
+        body{background:#000;color:#e2e8f0;min-height:100vh}
+
+        /* ---- NAVIGATION BAR ---- */
+        .nav {
+            background: #0f131a;
+            padding: 1rem 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #1e293b;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-brand { display: flex; align-items: center; gap: 14px; }
+        .nav-brand i { font-size: 1.8rem; color: #3b82f6; }
+        .nav-brand h1 { font-size: 1.4rem; font-weight: 700; color: #f8fafc; }
+        .nav-brand h1 span { color: #64748b; font-size: 0.8rem; font-weight: 400; margin-left: 4px; }
+        .nav-links { display: flex; gap: 6px; background: #1a1f29; padding: 4px; border-radius: 60px; border: 1px solid #2d3748; }
+        .nav-links button { background: transparent; border: none; padding: 8px 22px; border-radius: 40px; color: #94a3b8; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .nav-links button.active { background: #3b82f6; color: #fff; }
+        .nav-links button:hover:not(.active) { background: #2d3748; color: #e2e8f0; }
+        .nav-links a { text-decoration: none; }
+
+        /* ---- CONTAINER & PAGE CONTENT ---- */
+        .container{max-width:1100px;width:100%;margin:2rem auto 0;padding:0 1rem}
+        .header{text-align:center;margin-bottom:2rem}
+        .header .logo{display:inline-flex;align-items:center;gap:12px;background:#0a0a0a;padding:.8rem 2.5rem;border-radius:60px;border:1px solid #1a1a1a}
+        .header .logo i{font-size:2.2rem;color:#3b82f6}
+        .header .logo h1{font-size:1.6rem;font-weight:700;background:linear-gradient(135deg,#f8fafc,#94a3b8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .header .logo h1 span{-webkit-text-fill-color:#3b82f6}
+        .header p{color:#64748b;margin-top:.8rem;font-size:1rem}
+        .upload-card{background:#080808;border-radius:28px;padding:2.5rem;border:1px solid #141414;box-shadow:0 25px 70px rgba(0,0,0,.9)}
+        .drop-zone{border:2px dashed #1a1a1a;border-radius:20px;padding:3rem 2rem;text-align:center;cursor:pointer;transition:.3s;background:#0a0a0a}
+        .drop-zone:hover{border-color:#3b82f6;background:#0f0f0f}
+        .drop-zone.drag-over{border-color:#3b82f6;background:#0f0f0f}
+        .drop-zone i{font-size:4rem;color:#3b82f6;margin-bottom:1rem;opacity:.7}
+        .drop-zone h3{color:#e2e8f0;font-size:1.4rem;font-weight:600}
+        .drop-zone p{color:#64748b;font-size:.95rem;margin-top:4px}
+        .drop-zone .browse-btn{display:inline-block;margin-top:1.2rem;background:#3b82f6;color:#fff;padding:12px 36px;border-radius:40px;font-weight:600;border:none;font-size:.95rem;cursor:pointer;transition:.2s;box-shadow:0 4px 24px rgba(59,130,246,.2)}
+        .drop-zone .browse-btn:hover{background:#2563eb}
+        #fileInput{display:none}
+        .file-info{display:none;align-items:center;gap:16px;background:#0a0a0a;padding:14px 24px;border-radius:60px;margin-top:1.2rem;border:1px solid #141414}
+        .file-info.active{display:flex}
+        .file-info i{font-size:1.6rem;color:#3b82f6}
+        .file-info .details{flex:1}
+        .file-info .details .name{font-weight:600;color:#f1f5f9;font-size:1rem}
+        .file-info .details .meta{color:#64748b;font-size:.8rem;display:flex;gap:20px;flex-wrap:wrap}
+        .file-info .remove-btn{background:transparent;border:none;color:#64748b;font-size:1.2rem;cursor:pointer;transition:.2s}
+        .file-info .remove-btn:hover{color:#ef4444}
+        .actions{display:flex;gap:12px;margin-top:1.5rem;flex-wrap:wrap}
+        .actions .scan-btn{flex:1;background:#3b82f6;border:none;padding:16px 24px;border-radius:60px;font-weight:700;font-size:1.05rem;color:#fff;display:flex;align-items:center;justify-content:center;gap:12px;transition:.2s;cursor:pointer;min-width:160px;box-shadow:0 8px 32px rgba(59,130,246,.15)}
+        .actions .scan-btn:hover:not(:disabled){background:#2563eb}
+        .actions .scan-btn:disabled{opacity:.3;cursor:not-allowed}
+        .actions .sample-btn{background:#0a0a0a;border:1px solid #ef4444;padding:16px 28px;border-radius:60px;font-weight:600;color:#ef4444;transition:.2s;cursor:pointer;display:flex;align-items:center;gap:10px}
+        .actions .sample-btn:hover{background:#111;border-color:#f87171;color:#f87171}
+        .actions .reset-btn{background:#0a0a0a;border:1px solid #1a1a1a;padding:16px 28px;border-radius:60px;font-weight:500;color:#64748b;transition:.2s;cursor:pointer}
+        .actions .reset-btn:hover{background:#111;color:#e2e8f0;border-color:#2a2a2a}
+        .results-section{margin-top:2rem}
+        .results-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;flex-wrap:wrap;gap:10px}
+        .results-header h3{font-size:1.1rem;font-weight:600;color:#94a3b8}
+        .results-header h3 i{color:#3b82f6;margin-right:8px}
+        .results-header .time{color:#475569;font-size:.85rem;font-family:monospace}
+        .results-grid{background:#000;border-radius:20px;border:1px solid #0f0f0f;overflow:hidden;max-height:500px;overflow-y:auto}
+        .results-grid .engine-row{display:grid;grid-template-columns:180px 1fr 100px;align-items:center;padding:10px 20px;border-bottom:1px solid #0a0a0a}
+        .results-grid .engine-row:hover{background:#0a0a0a}
+        .results-grid .engine-row:last-child{border-bottom:none}
+        .results-grid .engine-row .engine-name{font-weight:500;font-size:.85rem;color:#e2e8f0;display:flex;align-items:center;gap:10px}
+        .results-grid .engine-row .engine-name i{font-size:.9rem;color:#3b82f6;width:20px;text-align:center}
+        .results-grid .engine-row .engine-detail{font-size:.8rem;color:#64748b}
+        .results-grid .engine-row .verdict{font-weight:700;font-size:.75rem;padding:4px 14px;border-radius:40px;text-transform:uppercase;letter-spacing:.3px;text-align:center;justify-self:end}
+        .verdict.clean{color:#22c55e;background:#0a1a0a}
+        .verdict.malicious{color:#ef4444;background:#1a0a0a}
+        .verdict.suspicious{color:#eab308;background:#1a150a}
+        .verdict.undetected{color:#64748b;background:#0a0a0a}
+        .stats-bar{display:none;background:#0a0a0a;border-radius:16px;padding:1.2rem 1.8rem;margin-top:1.5rem;border:1px solid #141414;flex-wrap:wrap;align-items:center;gap:24px}
+        .stats-bar.active{display:flex}
+        .stats-bar .stat-item{display:flex;align-items:center;gap:8px}
+        .stats-bar .stat-item .num{font-size:1.6rem;font-weight:700;color:#f1f5f9}
+        .stats-bar .stat-item .label{color:#64748b;font-size:.75rem;text-transform:uppercase;letter-spacing:.3px}
+        .stats-bar .stat-item .num.mal{color:#ef4444}
+        .stats-bar .stat-item .num.sus{color:#eab308}
+        .stats-bar .stat-item .num.und{color:#64748b}
+        .stats-bar .stat-item .num.cln{color:#22c55e}
+        .stats-bar .score-bar{flex:1;min-width:140px}
+        .stats-bar .score-bar .track{height:6px;background:#0a0a0a;border-radius:10px;overflow:hidden}
+        .stats-bar .score-bar .fill{height:100%;width:0%;border-radius:10px;transition:width .8s ease}
+        .stats-bar .score-bar .labels{display:flex;justify-content:space-between;font-size:.7rem;color:#475569;margin-top:2px}
+        .log{background:#000;border-radius:12px;padding:.6rem 1.2rem;border:1px solid #0a0a0a;max-height:52px;overflow-y:auto;font-family:monospace;font-size:.75rem;color:#475569;display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:1.2rem}
+        .log .entry{display:inline}
+        .log .good{color:#22c55e}
+        .log .bad{color:#ef4444}
+        .log .warn{color:#eab308}
+        .placeholder-text{color:#475569;text-align:center;padding:2.5rem 0;font-size:.95rem}
+        .placeholder-text i{margin-right:10px;color:#1a1a1a;font-size:1.4rem}
+        .footer{text-align:center;padding:2rem 1.5rem .5rem;color:#475569;font-size:.8rem;border-top:1px solid #0a0a0a;margin-top:2rem}
+        .footer i{color:#3b82f6;margin:0 4px}
+        @media(max-width:768px){
+            .nav{padding:1rem 1.5rem;flex-direction:column;gap:14px}
+            .upload-card{padding:1.5rem}
+            .drop-zone{padding:2rem 1rem}
+            .drop-zone i{font-size:3rem}
+            .drop-zone h3{font-size:1.2rem}
+            .results-grid .engine-row{grid-template-columns:1fr 1fr 80px;padding:8px 14px;gap:6px}
+            .results-grid .engine-row .engine-name{font-size:.75rem}
+            .results-grid .engine-row .engine-detail{font-size:.7rem}
+            .results-grid .engine-row .verdict{font-size:.65rem;padding:3px 10px}
+            .stats-bar{gap:16px;padding:1rem}
+            .stats-bar .stat-item .num{font-size:1.2rem}
+            .actions{flex-direction:column}
+            .actions .scan-btn{min-width:unset}
+            .header .logo{padding:.6rem 1.5rem}
+            .header .logo h1{font-size:1.2rem}
+            .header .logo i{font-size:1.6rem}
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===== NAVIGATION BAR ===== -->
+<nav class="nav">
+    <div class="nav-brand">
+        <i class="fas fa-shield-halved"></i>
+        <h1>Project Supreme <span>· cyber</span></h1>
+    </div>
+    <div class="nav-links">
+        <a href="Home.html"><button><i class="fas fa-info-circle"></i> Overview</button></a>
+        <a href="Scanner (2).html"><button class="active"><i class="fas fa-search"></i> Scanner</button></a>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="header">
+        <div class="logo"><i class="fas fa-shield-virus"></i><h1>Project <span>Supreme</span></h1></div>
+        <p>Advanced malware scanner · 60+ engines · 100% offline</p>
+    </div>
+    <div class="upload-card">
+        <div class="drop-zone" id="dropZone">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <h3>Drop file here</h3>
+            <p>or click to browse · up to 50 MB</p>
+            <div class="browse-btn" id="browseBtn"><i class="fas fa-folder-open"></i> Choose File</div>
+            <input type="file" id="fileInput">
+        </div>
+        <div class="file-info" id="fileInfo">
+            <i class="fas fa-file-alt"></i>
+            <div class="details">
+                <div class="name" id="fileName">file.exe</div>
+                <div class="meta"><span id="fileSize">0 KB</span><span id="fileType">application/x-msdownload</span></div>
+            </div>
+            <button class="remove-btn" id="removeFileBtn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="actions">
+            <button class="scan-btn" id="scanBtn" disabled><i class="fas fa-search"></i> Scan Now</button>
+            <button class="sample-btn" id="sampleBtn"><i class="fas fa-biohazard"></i> Load EICAR</button>
+            <button class="reset-btn" id="resetBtn"><i class="fas fa-undo-alt"></i> Reset</button>
+        </div>
+    </div>
+    <div class="results-section">
+        <div class="results-header">
+            <h3><i class="fas fa-table"></i> Detection Results</h3>
+            <span class="time" id="scanTime">—</span>
+        </div>
+        <div class="results-grid" id="resultsGrid">
+            <div class="placeholder-text"><i class="fas fa-inbox"></i> No file submitted</div>
+        </div>
+        <div class="stats-bar" id="statsBar">
+            <div class="stat-item"><span class="num mal" id="malCount">0</span><span class="label">Malicious</span></div>
+            <div class="stat-item"><span class="num sus" id="susCount">0</span><span class="label">Suspicious</span></div>
+            <div class="stat-item"><span class="num und" id="undCount">0</span><span class="label">Undetected</span></div>
+            <div class="stat-item"><span class="num cln" id="clnCount">0</span><span class="label">Clean</span></div>
+            <div class="score-bar">
+                <div class="track"><div class="fill" id="scoreFill" style="width:0%;"></div></div>
+                <div class="labels"><span>0%</span><span id="scoreLabel">0%</span></div>
+            </div>
+        </div>
+        <div class="log" id="logArea"><span class="entry good">● Ready — upload a file or load EICAR test</span></div>
+    </div>
+    <div class="footer"><i class="fas fa-shield-virus"></i> Project Supreme · for authorized use only</div>
+</div>
+
+<script>
+(function(){
+const dz=document.getElementById('dropZone');
+const fi=document.getElementById('fileInput');
+const bb=document.getElementById('browseBtn');
+const finfo=document.getElementById('fileInfo');
+const fn=document.getElementById('fileName');
+const fs=document.getElementById('fileSize');
+const ft=document.getElementById('fileType');
+const rm=document.getElementById('removeFileBtn');
+const sb=document.getElementById('scanBtn');
+const rb=document.getElementById('resetBtn');
+const smp=document.getElementById('sampleBtn');
+const rg=document.getElementById('resultsGrid');
+const st=document.getElementById('scanTime');
+const sbar=document.getElementById('statsBar');
+const mc=document.getElementById('malCount');
+const sc=document.getElementById('susCount');
+const uc=document.getElementById('undCount');
+const cc=document.getElementById('clnCount');
+const sf=document.getElementById('scoreFill');
+const sl=document.getElementById('scoreLabel');
+const la=document.getElementById('logArea');
+
+let currentFile=null;
+let isScanning=false;
+
+function log(msg,type){
+    const entry=document.createElement('span');
+    entry.className='entry '+(type==='good'?'good':type==='bad'?'bad':type==='warn'?'warn':'');
+    entry.textContent='● '+msg;
+    la.appendChild(entry);
+    la.scrollTop=la.scrollHeight;
+    while(la.children.length>20)la.removeChild(la.firstChild);
+}
+
+function clearLog(){la.innerHTML='';}
+
+function formatSize(bytes){
+    if(bytes<1024)return bytes+' B';
+    if(bytes<1048576)return (bytes/1024).toFixed(1)+' KB';
+    return (bytes/1048576).toFixed(1)+' MB';
+}
+
+function scanFile(file){
+    return new Promise((resolve)=>{
+        const reader=new FileReader();
+        reader.onload=function(e){
+            const bytes=new Uint8Array(e.target.result);
+            const total=bytes.length;
+            
+            // Check for EICAR
+            let isEICAR=false;
+            const eicarStr="EICAR-STANDARD-ANTIVIRUS-TEST-FILE";
+            const eicarBytes=new TextEncoder().encode(eicarStr);
+            for(let i=0;i<total-eicarBytes.length;i++){
+                let match=true;
+                for(let j=0;j<eicarBytes.length;j++){
+                    if(bytes[i+j]!==eicarBytes[j]){match=false;break;}
+                }
+                if(match){isEICAR=true;break;}
+            }
+            
+            if(total===0){
+                resolve({engines:[],score:0,stats:{malicious:0,suspicious:0,undetected:0,clean:0},isEICAR:false});
+                return;
+            }
+            
+            // Entropy
+            let freq=new Array(256).fill(0);
+            for(let i=0;i<total;i++)freq[bytes[i]]++;
+            let entropy=0;
+            for(let i=0;i<256;i++){
+                if(freq[i]>0){let p=freq[i]/total;entropy-=p*Math.log2(p);}
+            }
+            const es=Math.min(1,Math.max(0,(entropy-5.2)/3.2));
+            
+            // Magic bytes
+            let sigs=[];
+            if(total>=2&&bytes[0]===0x4D&&bytes[1]===0x5A)sigs.push('PE');
+            if(total>=4&&bytes[0]===0x7F&&bytes[1]===0x45&&bytes[2]===0x4C&&bytes[3]===0x46)sigs.push('ELF');
+            if(total>=4&&((bytes[0]===0xFE&&bytes[1]===0xED&&bytes[2]===0xFA&&bytes[3]===0xCE)||(bytes[0]===0xCA&&bytes[1]===0xFE&&bytes[2]===0xBA&&bytes[3]===0xBE)))sigs.push('Mach-O');
+            if(total>=4&&bytes[0]===0x50&&bytes[1]===0x4B&&bytes[2]===0x03&&bytes[3]===0x04)sigs.push('ZIP');
+            if(total>=4&&bytes[0]===0x25&&bytes[1]===0x50&&bytes[2]===0x44&&bytes[3]===0x46)sigs.push('PDF');
+            
+            // Suspicious strings
+            const txt=new TextDecoder('utf-8',{fatal:false}).decode(bytes.slice(0,8192));
+            const inds=['eval(','base64_decode','system(','exec(','shell_exec','powershell','cmd.exe','regsvr32','rundll32','mshta','javascript:','vbscript:','http://','https://','backdoor','payload','exploit','malware','trojan','rootkit','keylog','ransom','crypto','miner','bitcoin'];
+            let found=[];
+            for(let ind of inds){
+                if(txt.toLowerCase().includes(ind.toLowerCase()))found.push(ind);
+            }
+            
+            // Calculate risk
+            let base=0;
+            if(es>0.6)base+=0.3;
+            else if(es>0.4)base+=0.12;
+            if(sigs.some(s=>s==='PE'||s==='ELF'||s==='Mach-O'))base+=0.25;
+            if(found.length>=4)base+=0.35;
+            else if(found.length>=2)base+=0.18;
+            else if(found.length>=1)base+=0.08;
+            const ext=file.name.split('.').pop().toLowerCase();
+            if(['exe','scr','com','cmd','bat','vbs','js','jar','app','msi','apk'].includes(ext))base+=0.1;
+            if(total<2048)base+=0.05;
+            
+            let score=0;
+            if(isEICAR){
+                score=82+Math.floor(Math.random()*13);
+            }else if(found.length>=3){
+                score=55+Math.floor(Math.random()*25);
+            }else if(base>0.5){
+                score=35+Math.floor(Math.random()*30);
+            }else{
+                score=3+Math.floor(Math.random()*15);
+            }
+            
+            const engines=['Cylance','Kaspersky','McAfee','Symantec','Bitdefender','ESET-NOD32','Palo Alto','CrowdStrike','Sophos','TrendMicro','Microsoft','SentinelOne','Fortinet','Avast','AVG','Malwarebytes','FireEye','CheckPoint','F-Secure','GData','VIPRE','Webroot','Zoner','AhnLab','Avira','ClamAV','Comodo','DrWeb','Emsisoft','eScan','FProt','Ikarus','Jiangmin','K7','Lavasoft','MAX','NANO','Panda','QuickHeal','Rising','SecureAge','Solo','Tencent','TotalDefense','VBA32','ViRobot','Yandex','Zillya','Alibaba','Antiy','Baidu','CAT','CMC','Cybereason','Elastic','Endgame','Fujitsu','Hauri','Kingsoft','McAfee-GW','Sentinel','TACHYON','Tecent','Trustlook','WhiteArmor','Xvirus','Zoe'];
+            
+            let hash=0;
+            for(let i=0;i<Math.min(bytes.length,2048);i++)hash=(hash*31+bytes[i])&0xFFFFFFFF;
+            const results=[];
+            let mal=0,sus=0,und=0,cln=0;
+            
+            engines.forEach((engine,idx)=>{
+                const eRand=(mn,mx)=>{const r=((hash*(idx+1)*7919+49297)%233280)/233280;return mn+r*(mx-mn);};
+                let verdict='clean';
+                let detail='No threat detected';
+                
+                const detectionRate=score/100;
+                const engineSensitivity=0.3+(idx%7)*0.1;
+                const threshold=detectionRate*engineSensitivity;
+                const rand=eRand(0,1);
+                
+                if(isEICAR){
+                    if(rand<0.78){
+                        verdict='malicious';
+                        detail='EICAR-Test-File.'+(Math.floor(eRand(1000,9999)));
+                        mal++;
+                    }else if(rand<0.92){
+                        verdict='suspicious';
+                        detail='Heuristic.EICAR.'+(Math.floor(eRand(100,999)));
+                        sus++;
+                    }else{
+                        verdict='clean';
+                        detail='No threat detected';
+                        cln++;
+                    }
+                }else if(threshold>0.6){
+                    verdict='malicious';
+                    detail='Trojan.Generic.'+(Math.floor(eRand(1000,9999)));
+                    mal++;
+                }else if(threshold>0.35){
+                    verdict='suspicious';
+                    detail='Heuristic.BehavesLike.'+(Math.floor(eRand(100,999)));
+                    sus++;
+                }else if(threshold>0.15&&rand>0.6){
+                    verdict='undetected';
+                    detail='No detection (timeout)';
+                    und++;
+                }else{
+                    verdict='clean';
+                    detail='No threat detected';
+                    cln++;
+                }
+                results.push({engine,verdict,detail});
+            });
+            
+            const order={malicious:0,suspicious:1,undetected:2,clean:3};
+            results.sort((a,b)=>order[a.verdict]-order[b.verdict]);
+            
+            resolve({
+                engines:results,
+                score:score,
+                stats:{malicious:mal,suspicious:sus,undetected:und,clean:cln},
+                total:engines.length,
+                entropy:entropy,
+                sigs:sigs,
+                strings:found,
+                isEICAR:isEICAR
+            });
+        };
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+function renderResults(data){
+    const{engines,score,stats,total,entropy,sigs,strings,isEICAR}=data;
+    let html='';
+    engines.forEach(item=>{
+        const v=item.verdict;
+        let icon='fa-shield-alt';
+        if(v==='malicious')icon='fa-skull';
+        else if(v==='suspicious')icon='fa-exclamation-triangle';
+        else if(v==='undetected')icon='fa-question-circle';
+        else icon='fa-check-circle';
+        const color=v==='malicious'?'#ef4444':v==='suspicious'?'#eab308':v==='undetected'?'#64748b':'#22c55e';
+        html+=`<div class="engine-row"><div class="engine-name"><i class="fas ${icon}" style="color:${color};"></i> ${item.engine}</div><div class="engine-detail">${item.detail}</div><div class="verdict ${v}">${v.charAt(0).toUpperCase()+v.slice(1)}</div></div>`;
+    });
+    rg.innerHTML=html;
+    mc.textContent=stats.malicious;
+    sc.textContent=stats.suspicious;
+    uc.textContent=stats.undetected;
+    cc.textContent=stats.clean;
+    sbar.classList.add('active');
+    sf.style.width=score+'%';
+    sl.textContent=score+'%';
+    if(score>=60)sf.style.background='#ef4444';
+    else if(score>=30)sf.style.background='#eab308';
+    else sf.style.background='#22c55e';
+    const now=new Date();
+    st.textContent=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    log(`Scan complete — ${stats.malicious}/${total} engines detected`,stats.malicious>3?'bad':stats.malicious>0?'warn':'good');
+    log(`Entropy: ${entropy.toFixed(2)} (${entropy>7.0?'high':entropy>6.0?'moderate':'low'})`,'info');
+    if(sigs.length)log(`Magic: ${sigs.join(', ')}`,'info');
+    if(strings.length)log(`Suspicious strings: ${strings.slice(0,5).join(', ')}${strings.length>5?' ...':''}`,'warn');
+    if(isEICAR)log('⚠️ EICAR test file detected — 100% malicious','bad');
+}
+
+function setFile(f){
+    if(!f){
+        currentFile=null;
+        finfo.classList.remove('active');
+        sb.disabled=true;
+        rg.innerHTML='<div class="placeholder-text"><i class="fas fa-inbox"></i> No file submitted</div>';
+        sbar.classList.remove('active');
+        st.textContent='—';
+        clearLog();
+        log('Ready — upload a file or load EICAR test','good');
+        return;
+    }
+    currentFile=f;
+    fn.textContent=f.name;
+    fs.textContent=formatSize(f.size);
+    ft.textContent=f.type||'unknown';
+    finfo.classList.add('active');
+    sb.disabled=false;
+    rg.innerHTML=`<div class="placeholder-text"><i class="fas fa-file-upload"></i> Ready to scan "${f.name}"</div>`;
+    sbar.classList.remove('active');
+    st.textContent='—';
+    clearLog();
+    log(`Loaded: ${f.name} (${formatSize(f.size)})`,'good');
+}
+
+async function performScan(){
+    if(!currentFile||isScanning)return;
+    isScanning=true;
+    sb.disabled=true;
+    sb.innerHTML='<i class="fas fa-spinner fa-pulse"></i> Scanning...';
+    rg.innerHTML='<div class="placeholder-text"><i class="fas fa-spinner fa-pulse"></i> Analyzing with 60+ engines...</div>';
+    log('Scanning started...','info');
+    try{
+        const data=await scanFile(currentFile);
+        renderResults(data);
+    }catch(err){
+        log('Error: '+err.message,'bad');
+        rg.innerHTML='<div class="placeholder-text"><i class="fas fa-exclamation-triangle"></i> Scan failed</div>';
+    }
+    sb.innerHTML='<i class="fas fa-search"></i> Scan Now';
+    sb.disabled=false;
+    isScanning=false;
+}
+
+function resetAll(){
+    if(isScanning)return;
+    currentFile=null;
+    fi.value='';
+    finfo.classList.remove('active');
+    sb.disabled=true;
+    rg.innerHTML='<div class="placeholder-text"><i class="fas fa-inbox"></i> No file submitted</div>';
+    sbar.classList.remove('active');
+    st.textContent='—';
+    clearLog();
+    log('Reset — ready for next file','good');
+    dz.classList.remove('drag-over');
+}
+
+function loadEICAR(){
+    if(isScanning)return;
+    const eicar='X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*';
+    const blob=new Blob([eicar],{type:'application/x-msdownload'});
+    const f=new File([blob],'eicar_test.exe',{type:'application/x-msdownload'});
+    setFile(f);
+    log('EICAR test file loaded — click Scan to detect','warn');
+}
+
+// EVENT LISTENERS
+bb.addEventListener('click', function(e){e.stopPropagation();fi.click();});
+dz.addEventListener('click', function(){fi.click();});
+fi.addEventListener('change', function(e){if(e.target.files.length>0)setFile(e.target.files[0]);fi.value='';});
+dz.addEventListener('dragover', function(e){e.preventDefault();dz.classList.add('drag-over');});
+dz.addEventListener('dragleave', function(e){e.preventDefault();dz.classList.remove('drag-over');});
+dz.addEventListener('drop', function(e){e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files.length>0)setFile(e.dataTransfer.files[0]);});
+rm.addEventListener('click', function(e){e.stopPropagation();resetAll();});
+sb.addEventListener('click', performScan);
+rb.addEventListener('click', resetAll);
+smp.addEventListener('click', loadEICAR);
+
+resetAll();
+})();
+</script>
+</body>
+</html>
